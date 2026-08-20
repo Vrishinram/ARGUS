@@ -1,0 +1,1141 @@
+/* ==========================================================================
+   ARGUS // TACTICAL AI DEFENSE COMMAND CONSOLE (INDUSTRIAL SEC-OPS THEME)
+   ========================================================================== */
+
+:root {
+    /* Industrial Defense Palette */
+    --tactical-bg: #090a0f;
+    --tactical-surface: #11141d;
+    --tactical-panel: #151924;
+    --tactical-panel-hover: #1c2230;
+    
+    --border-tactical: #232a3b;
+    --border-tactical-light: #323c52;
+    --border-highlight: #ff9900;
+
+    /* Signal Colors */
+    --sig-amber: #ff9900;
+    --sig-amber-dim: rgba(255, 153, 0, 0.15);
+    
+    --sig-crimson: #ff3355;
+    --sig-crimson-dim: rgba(255, 51, 85, 0.15);
+
+    --sig-emerald: #00f090;
+    --sig-emerald-dim: rgba(0, 240, 144, 0.15);
+
+    --sig-cyan: #00c8ff;
+    --sig-cyan-dim: rgba(0, 200, 255, 0.15);
+
+    --sig-purple: #c084fc;
+
+    /* Typography */
+    --font-head: 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', -apple-system, sans-serif;
+    --font-mono: 'Space Mono', monospace;
+
+    /* Text */
+    --text-pure: #ffffff;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --text-dim: #475569;
+
+    --radius-sharp: 4px;
+    --radius-tactical: 6px;
+    --transition-fast: all 0.18s cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Reset */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body.tactical-body {
+    background-color: var(--tactical-bg);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* HUD Scanline & Vignette Effects */
+.hud-scanlines {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.01), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.01));
+    background-size: 100% 3px, 6px 100%;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.6;
+}
+
+.hud-vignette {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at center, transparent 60%, rgba(0, 0, 0, 0.7) 100%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Typography Utilities */
+.font-mono { font-family: var(--font-mono) !important; }
+.font-bold { font-weight: 700 !important; }
+.text-crimson { color: var(--sig-crimson) !important; }
+.text-amber { color: var(--sig-amber) !important; }
+.text-emerald { color: var(--sig-emerald) !important; }
+.text-cyan { color: var(--sig-cyan) !important; }
+.text-muted { color: var(--text-muted) !important; }
+.text-right { text-align: right !important; }
+.hidden { display: none !important; }
+
+/* TOP COMMAND BAR */
+.tactical-header {
+    height: 60px;
+    background: var(--tactical-surface);
+    border-bottom: 1px solid var(--border-tactical);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+}
+
+.header-section-left {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.tactical-emblem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.emblem-core {
+    width: 32px;
+    height: 32px;
+    background: var(--sig-amber-dim);
+    border: 1px solid var(--sig-amber);
+    border-radius: var(--radius-sharp);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--sig-amber);
+    box-shadow: 0 0 12px rgba(255, 153, 0, 0.25);
+}
+
+.system-id-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.system-name {
+    font-family: var(--font-head);
+    font-weight: 800;
+    font-size: 1.15rem;
+    letter-spacing: 1.5px;
+    color: #fff;
+}
+
+.classification-tag {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 2px 6px;
+    border-radius: 2px;
+    color: var(--sig-amber);
+    letter-spacing: 0.5px;
+}
+
+.sub-id {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    display: block;
+}
+
+/* DEFCON Indicator */
+.defcon-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    border-radius: var(--radius-sharp);
+    background: var(--tactical-panel);
+    border: 1px solid var(--border-tactical);
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+}
+
+.defcon-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--sig-emerald);
+    box-shadow: 0 0 8px var(--sig-emerald);
+    animation: tacticalPulse 1.8s infinite;
+}
+
+@keyframes tacticalPulse {
+    0% { transform: scale(0.9); opacity: 0.7; }
+    50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 12px var(--sig-emerald); }
+    100% { transform: scale(0.9); opacity: 0.7; }
+}
+
+/* Center Telemetry Gaugings */
+.header-section-center {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    background: var(--tactical-panel);
+    border: 1px solid var(--border-tactical);
+    border-radius: var(--radius-sharp);
+    padding: 5px 16px;
+}
+
+.live-telemetry-gauge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.gauge-label {
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+}
+
+.gauge-val {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.gauge-separator {
+    width: 1px;
+    height: 22px;
+    background: var(--border-tactical);
+}
+
+/* Right Header Controls */
+.header-section-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.auth-key-tactical {
+    display: flex;
+    align-items: center;
+    background: var(--tactical-panel);
+    border: 1px solid var(--border-tactical);
+    border-radius: var(--radius-sharp);
+    overflow: hidden;
+}
+
+.key-tag {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px 8px;
+    color: var(--text-muted);
+    border-right: 1px solid var(--border-tactical);
+}
+
+.tactical-input-key {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--sig-amber);
+    padding: 4px 10px;
+    width: 130px;
+}
+
+/* TACTICAL BUTTONS */
+.tactical-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: var(--tactical-panel);
+    border: 1px solid var(--border-tactical);
+    border-radius: var(--radius-sharp);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.tactical-btn:hover {
+    background: var(--tactical-panel-hover);
+    border-color: var(--border-tactical-light);
+    color: #fff;
+}
+
+.tactical-btn-accent {
+    background: var(--sig-amber-dim);
+    border-color: var(--sig-amber);
+    color: var(--sig-amber);
+}
+
+.tactical-btn-accent:hover {
+    background: var(--sig-amber);
+    color: #000;
+    box-shadow: 0 0 15px rgba(255, 153, 0, 0.4);
+}
+
+.tactical-btn-sm {
+    padding: 4px 10px;
+    font-size: 0.7rem;
+}
+
+.tactical-btn-lg {
+    padding: 10px 18px;
+    font-size: 0.82rem;
+}
+
+/* MAIN LAYOUT */
+.tactical-layout {
+    display: grid;
+    grid-template-columns: 270px 1fr;
+    min-height: calc(100vh - 100px);
+    position: relative;
+    z-index: 5;
+}
+
+/* SIDEBAR */
+.tactical-sidebar {
+    background: var(--tactical-surface);
+    border-right: 1px solid var(--border-tactical);
+    padding: 1.25rem 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1.5rem;
+}
+
+.sidebar-header-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    padding-left: 8px;
+    margin-bottom: 0.5rem;
+}
+
+.tactical-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tactical-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-left: 3px solid transparent;
+    border-radius: var(--radius-sharp);
+    color: var(--text-secondary);
+    font-family: var(--font-head);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    text-align: left;
+    width: 100%;
+}
+
+.tactical-nav-item:hover {
+    background: var(--tactical-panel);
+    color: #fff;
+}
+
+.tactical-nav-item.active {
+    background: var(--tactical-panel);
+    border-color: var(--border-tactical);
+    border-left-color: var(--sig-amber);
+    color: #fff;
+}
+
+.nav-marker {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.tactical-nav-item.active .nav-marker {
+    color: var(--sig-amber);
+}
+
+.nav-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.nav-heading {
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.nav-desc {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+}
+
+.badge-count {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    background: var(--tactical-bg);
+    border: 1px solid var(--border-tactical);
+    border-radius: 2px;
+    color: var(--text-muted);
+}
+
+.status-chip-live {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 800;
+    background: var(--sig-crimson-dim);
+    border: 1px solid var(--sig-crimson);
+    color: var(--sig-crimson);
+    padding: 2px 5px;
+    border-radius: 2px;
+}
+
+/* TOPOLOGY MATRIX IN SIDEBAR */
+.topology-matrix-panel {
+    background: var(--tactical-bg);
+    border: 1px solid var(--border-tactical);
+    border-radius: var(--radius-sharp);
+    padding: 10px;
+}
+
+.matrix-title-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.65rem;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border-tactical);
+}
+
+.matrix-label {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.nodes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.node-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.68rem;
+    gap: 8px;
+}
+
+.node-indicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--sig-emerald);
+}
+
+.node-name {
+    flex: 1;
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+}
+
+.node-state {
+    font-size: 0.62rem;
+    color: var(--sig-emerald);
+}
+
+/* MAIN CONTENT */
+.tactical-content {
+    padding: 1.5rem;
+    overflow-y: auto;
+    max-height: calc(100vh - 100px);
+}
+
+.tactical-view {
+    display: none;
+    animation: tacticalFade 0.2s ease-out;
+}
+
+.tactical-view.active {
+    display: block;
+}
+
+@keyframes tacticalFade {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* TELEMETRY CARDS (KPIs) */
+.telemetry-blocks-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.telemetry-block {
+    background: var(--tactical-surface);
+    border: 1px solid var(--border-tactical);
+    border-top: 3px solid var(--border-tactical-light);
+    border-radius: var(--radius-sharp);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: var(--transition-fast);
+}
+
+.telemetry-block:hover {
+    border-color: var(--border-tactical-light);
+    transform: translateY(-2px);
+}
+
+.telemetry-block.block-alert {
+    border-top-color: var(--sig-crimson);
+}
+
+.block-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.block-index {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--text-muted);
+}
+
+.block-badge {
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+}
+
+.block-badge-danger { background: var(--sig-crimson-dim); color: var(--sig-crimson); }
+.block-badge-amber { background: var(--sig-amber-dim); color: var(--sig-amber); }
+.block-badge-emerald { background: var(--sig-emerald-dim); color: var(--sig-emerald); }
+
+.block-value-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: 4px 0;
+}
+
+.block-val {
+    font-family: var(--font-mono);
+    font-size: 1.9rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+}
+
+.block-unit {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.block-sub-badge {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--sig-crimson);
+    background: var(--sig-crimson-dim);
+    padding: 2px 6px;
+    border-radius: 2px;
+}
+
+.block-foot {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+/* TACTICAL PANELS */
+.tactical-panel {
+    background: var(--tactical-surface);
+    border: 1px solid var(--border-tactical);
+    border-radius: var(--radius-sharp);
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.panel-half {
+    margin-bottom: 0;
+}
+
+.analytics-matrix-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.panel-header-tactical {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-tactical);
+}
+
+.panel-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.panel-code {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--sig-amber);
+    font-weight: 700;
+}
+
+.panel-heading {
+    font-family: var(--font-head);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.panel-meta-tag {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+}
+
+.panel-chart-container {
+    position: relative;
+    height: 220px;
+}
+
+/* DATA TABLE */
+.radar-ping-icon {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--sig-amber);
+    box-shadow: 0 0 10px var(--sig-amber);
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+.tactical-data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    text-align: left;
+}
+
+.tactical-data-table th {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-tactical);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.tactical-data-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(35, 42, 59, 0.5);
+    color: var(--text-secondary);
+}
+
+.tactical-data-table tbody tr:hover {
+    background: var(--tactical-panel);
+}
+
+.tactical-empty-cell {
+    text-align: center;
+    padding: 2.5rem !important;
+    color: var(--text-muted);
+}
+
+/* TACTICAL CHIPS & BADGES */
+.t-badge {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 2px;
+}
+
+.t-badge-danger { background: var(--sig-crimson-dim); color: var(--sig-crimson); border: 1px solid var(--sig-crimson); }
+.t-badge-warning { background: var(--sig-amber-dim); color: var(--sig-amber); border: 1px solid var(--sig-amber); }
+.t-badge-success { background: var(--sig-emerald-dim); color: var(--sig-emerald); border: 1px solid var(--sig-emerald); }
+.t-badge-info { background: var(--sig-cyan-dim); color: var(--sig-cyan); border: 1px solid var(--sig-cyan); }
+
+/* FILTER TOOLBAR */
+.tactical-filter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.tactical-search-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--tactical-bg);
+    border: 1px solid var(--border-tactical);
+    border-radius: var(--radius-sharp);
+    padding: 6px 12px;
+    flex: 1;
+    min-width: 260px;
+}
+
+.search-icon { color: var(--sig-amber); font-weight: 700; }
+
+.tactical-search-box input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: #fff;
+    width: 100%;
+}
+
+.tactical-filter-chips {
+    display: flex;
+    gap: 6px;
+}
+
+.t-chip {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    background: var(--tactical-bg);
+    border: 1px solid var(--border-tactical);
+    color: var(--text-muted);
+    padding: 5px 10px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.t-chip:hover { color: #fff; border-color: var(--border-tactical-light); }
+.t-chip.active { background: var(--sig-amber); color: #000; border-color: var(--sig-amber); }
+.t-chip.chip-danger.active { background: var(--sig-crimson); color: #fff; border-color: var(--sig-crimson); }
+.t-chip.chip-amber.active { background: var(--sig-amber); color: #000; border-color: var(--sig-amber); }
+.t-chip.chip-blue.active { background: var(--sig-cyan); color: #000; border-color: var(--sig-cyan); }
+.t-chip.chip-emerald.active { background: var(--sig-emerald); color: #000; border-color: var(--sig-emerald); }
+
+/* ATTACK SANDBOX */
+.sandbox-tactical-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+}
+
+.tactical-presets-row {
+    margin-bottom: 1rem;
+}
+
+.presets-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 6px;
+}
+
+.preset-buttons-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.t-preset-btn {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--tactical-panel);
+    border: 1px solid var(--border-tactical);
+    border-radius: 2px;
+    color: var(--text-secondary);
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.t-preset-btn .p-code { color: var(--sig-amber); margin-right: 4px; font-weight: 700; }
+
+.t-preset-btn:hover {
+    background: var(--sig-amber-dim);
+    border-color: var(--sig-amber);
+    color: #fff;
+}
+
+.tactical-input-container {
+    margin-bottom: 1rem;
+}
+
+.input-header-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.tactical-textarea {
+    width: 100%;
+    background: var(--tactical-bg);
+    border: 1px solid var(--border-tactical);
+    border-radius: 2px;
+    padding: 10px;
+    color: var(--sig-amber);
+    font-size: 0.82rem;
+    line-height: 1.6;
+    resize: vertical;
+    outline: none;
+}
+
+.tactical-textarea:focus {
+    border-color: var(--sig-amber);
+    box-shadow: 0 0 10px rgba(255, 153, 0, 0.2);
+}
+
+.tactical-sandbox-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* VERDICT TELEMETRY PANEL */
+.tactical-verdict-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 280px;
+    text-align: center;
+    gap: 12px;
+    padding: 2rem;
+}
+
+.radar-scope-icon {
+    font-size: 0.9rem;
+    color: var(--sig-amber);
+    border: 1px dashed var(--sig-amber);
+    padding: 10px 18px;
+    border-radius: 2px;
+}
+
+.tactical-verdict-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.verdict-banner-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-tactical);
+}
+
+.verdict-tag-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.t-badge-verdict {
+    font-size: 0.95rem;
+    font-weight: 800;
+    padding: 4px 12px;
+    border-radius: 2px;
+}
+
+.verdict-risk-data {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+
+.verdict-risk-data strong {
+    font-size: 1rem;
+}
+
+.verdict-latency-tag {
+    font-size: 0.75rem;
+    color: var(--sig-emerald);
+    background: var(--sig-emerald-dim);
+    padding: 3px 8px;
+    border-radius: 2px;
+}
+
+.tactical-gauges-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.t-gauge-card {
+    background: var(--tactical-bg);
+    border: 1px solid var(--border-tactical);
+    padding: 6px 8px;
+    border-radius: 2px;
+}
+
+.t-gauge-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.62rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.t-gauge-track {
+    height: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+}
+
+.t-gauge-fill { height: 100%; transition: width 0.3s ease; }
+.fill-crimson { background: var(--sig-crimson); }
+.fill-amber { background: var(--sig-amber); }
+.fill-purple { background: var(--sig-purple); }
+
+.tactical-section-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.t-section-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.t-violations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.t-violation-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--sig-crimson-dim);
+    border: 1px solid var(--sig-crimson);
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    border-radius: 2px;
+}
+
+.t-viol-cat {
+    color: var(--sig-crimson);
+    font-weight: 700;
+    margin-right: 6px;
+}
+
+.tactical-code-screen {
+    background: #050608;
+    border: 1px solid var(--border-tactical);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.screen-header {
+    background: var(--tactical-panel);
+    padding: 4px 8px;
+    font-size: 0.62rem;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-tactical);
+}
+
+.screen-content {
+    padding: 8px;
+    font-size: 0.78rem;
+    color: var(--sig-emerald);
+    line-height: 1.5;
+    max-height: 180px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.policy-screen .screen-content {
+    max-height: 480px;
+    color: var(--text-primary);
+}
+
+/* BOTTOM CLI DRAWER */
+.tactical-cli-drawer {
+    height: 40px;
+    background: var(--tactical-bg);
+    border-top: 1px solid var(--border-tactical);
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
+    position: sticky;
+    bottom: 0;
+    z-index: 50;
+}
+
+.cli-prompt-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 10px;
+}
+
+.cli-prompt-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--sig-amber);
+}
+
+.cli-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 0.8rem;
+    color: #fff;
+}
+
+.cli-hint {
+    font-size: 0.62rem;
+    color: var(--text-dim);
+}
+
+/* FORENSIC MODAL */
+.tactical-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.tactical-modal-box {
+    width: 90%;
+    max-width: 800px;
+    max-height: 85vh;
+    background: var(--tactical-surface);
+    border: 1px solid var(--border-tactical-light);
+    border-radius: var(--radius-sharp);
+    overflow-y: auto;
+    padding: 1.5rem;
+}
+
+.modal-header-tactical {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-tactical);
+    padding-bottom: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.modal-code { font-size: 0.65rem; color: var(--sig-amber); }
+.modal-incident-id { font-size: 1.1rem; color: #fff; }
+.modal-close-tactical { background: transparent; border: none; font-size: 1.8rem; color: var(--text-muted); cursor: pointer; }
+.modal-close-tactical:hover { color: #fff; }
+
+.modal-meta-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 1rem;
+}
+
+.meta-data-cell {
+    background: var(--tactical-panel);
+    border: 1px solid var(--border-tactical);
+    padding: 6px 8px;
+    border-radius: 2px;
+}
+
+.meta-lbl { font-size: 0.6rem; color: var(--text-muted); display: block; margin-bottom: 2px; }
+.meta-val { font-size: 0.82rem; font-weight: 700; }
+
+.modal-sub-block { margin-bottom: 1rem; }
+.sub-block-title { font-size: 0.65rem; color: var(--text-muted); display: block; margin-bottom: 4px; }
+
+/* TOAST SHELF */
+.tactical-toast-shelf {
+    position: fixed;
+    bottom: 50px;
+    right: 20px;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.tactical-toast {
+    background: var(--tactical-panel);
+    border: 1px solid var(--border-tactical-light);
+    border-left: 3px solid var(--sig-amber);
+    padding: 8px 14px;
+    font-size: 0.78rem;
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: toastPop 0.2s ease;
+}
+
+@keyframes toastPop {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}

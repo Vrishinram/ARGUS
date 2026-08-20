@@ -1,0 +1,44 @@
+version: "1.0"
+metadata:
+  name: "ARGUS Permissive / Audit-Only Policy"
+  description: "Non-blocking audit mode policy that flags threats without rejecting requests."
+  updated_at: "2026-08-20"
+
+global_settings:
+  default_action: "ALLOW"
+  risk_threshold_block: 0.99
+  risk_threshold_flag: 0.30
+  enable_response_inspection: true
+  enable_request_redaction: true
+
+inspectors:
+  pii:
+    enabled: true
+    action: "FLAG"
+    risk_weight: 0.20
+    entities:
+      - name: "email"
+        regex: '[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'
+        redact_with: "[REDACTED_EMAIL]"
+
+  prompt_injection:
+    enabled: true
+    action: "FLAG"
+    risk_weight: 0.50
+    block_threshold: 0.99
+    patterns:
+      - name: "system_override"
+        pattern: '(?i)(ignore( all)? previous (instructions|prompts|rules)|disregard all previous directions)'
+        score: 0.90
+
+  secret_leakage:
+    enabled: true
+    action: "FLAG"
+    risk_weight: 0.80
+    patterns:
+      - name: "private_key"
+        regex: '-----BEGIN (?:RSA |EC |OPENSSH |PGP |DSA )?PRIVATE KEY-----'
+
+response_rules:
+  block_on_secret_leak: false
+  redact_pii_in_response: true

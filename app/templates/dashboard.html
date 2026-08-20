@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARGUS // Tactical AI Defense Command Console</title>
+    <meta name="description" content="High-Density Tactical AI Security Gateway & Threat Interception Console.">
+    
+    <!-- Distinct Industrial & High-Tech Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body class="tactical-body">
+    <!-- Background Scanlines & HUD grid -->
+    <div class="hud-scanlines"></div>
+    <div class="hud-vignette"></div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="tactical-toast-shelf"></div>
+
+    <!-- TOP COMMAND BAR -->
+    <header class="tactical-header">
+        <div class="header-section-left">
+            <div class="tactical-emblem">
+                <div class="emblem-core">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                        <polyline points="2 17 12 22 22 17"/>
+                        <polyline points="2 12 12 17 22 12"/>
+                    </svg>
+                </div>
+                <div class="emblem-text">
+                    <div class="system-id-row">
+                        <span class="system-name">ARGUS</span>
+                        <span class="classification-tag">TACTICAL SEC-OPS</span>
+                    </div>
+                    <span class="sub-id">GATEWAY UNIT // DEFENSE MATRIX 4.0</span>
+                </div>
+            </div>
+
+            <!-- DEFCON Threat Posture Indicator -->
+            <div class="defcon-pill defcon-1" id="defconIndicator">
+                <span class="defcon-dot"></span>
+                <span class="defcon-text">DEFENSE LEVEL: <strong>ACTIVE SHIELD</strong></span>
+            </div>
+        </div>
+
+        <!-- Center Global Telemetry Metrics -->
+        <div class="header-section-center">
+            <div class="live-telemetry-gauge">
+                <span class="gauge-label">INSPECTION LATENCY</span>
+                <span class="gauge-val font-mono" id="headLatency">3.2 ms</span>
+            </div>
+            <div class="gauge-separator"></div>
+            <div class="live-telemetry-gauge">
+                <span class="gauge-label">THREAT INTERCEPT RATE</span>
+                <span class="gauge-val font-mono text-crimson" id="headBlockRate">0%</span>
+            </div>
+            <div class="gauge-separator"></div>
+            <div class="live-telemetry-gauge">
+                <span class="gauge-label">UPSTREAM BACKEND</span>
+                <span class="gauge-val font-mono text-amber" id="headUpstream">MOCK PROVIDER</span>
+            </div>
+        </div>
+
+        <!-- Right System Controls -->
+        <div class="header-section-right">
+            <div class="auth-key-tactical">
+                <span class="key-tag">AUTH</span>
+                <input type="password" id="adminKeyInput" value="sk-argus-admin-master-key" class="tactical-input-key" title="Admin Security Key">
+            </div>
+
+            <button id="refreshBtn" class="tactical-btn tactical-btn-accent" title="Force Sync Radar">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                <span>SYNC</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- TACTICAL WORKSPACE -->
+    <div class="tactical-layout">
+        <!-- LEFT: TACTICAL CONTROL BAR -->
+        <aside class="tactical-sidebar">
+            <div class="sidebar-header-label">SYSTEM SECTORS</div>
+            <nav class="tactical-nav">
+                <button class="tactical-nav-item active" data-tab="radar">
+                    <span class="nav-marker">01</span>
+                    <div class="nav-content">
+                        <span class="nav-heading">Threat Radar</span>
+                        <span class="nav-desc">Telemetry & Vector Topology</span>
+                    </div>
+                </button>
+
+                <button class="tactical-nav-item" data-tab="intercepts">
+                    <span class="nav-marker">02</span>
+                    <div class="nav-content">
+                        <span class="nav-heading">Incident Logs</span>
+                        <span class="nav-desc">Forensic Event Database</span>
+                    </div>
+                    <span class="badge-count" id="badgeIncidentCount">0</span>
+                </button>
+
+                <button class="tactical-nav-item" data-tab="sandbox">
+                    <span class="nav-marker">03</span>
+                    <div class="nav-content">
+                        <span class="nav-heading">Attack Simulator</span>
+                        <span class="nav-desc">Live Payload Fuzzing</span>
+                    </div>
+                    <span class="status-chip-live">LIVE</span>
+                </button>
+
+                <button class="tactical-nav-item" data-tab="policy">
+                    <span class="nav-marker">04</span>
+                    <div class="nav-content">
+                        <span class="nav-heading">Policy Matrix</span>
+                        <span class="nav-desc">YAML Defense Schema</span>
+                    </div>
+                </button>
+            </nav>
+
+            <!-- Active Defense Topology Grid -->
+            <div class="topology-matrix-panel">
+                <div class="matrix-title-row">
+                    <span class="matrix-label">DEFENSE PIPELINE NODES</span>
+                    <span class="matrix-status text-emerald font-mono">ALL ENGAGED</span>
+                </div>
+                <div class="nodes-list">
+                    <div class="node-row active-node">
+                        <span class="node-indicator"></span>
+                        <span class="node-name">01. INGRESS AUTH & RATE GATE</span>
+                        <span class="node-state font-mono">OK</span>
+                    </div>
+                    <div class="node-row active-node">
+                        <span class="node-indicator"></span>
+                        <span class="node-name">02. PROMPT INJECTION SCANNER</span>
+                        <span class="node-state font-mono">ARMED</span>
+                    </div>
+                    <div class="node-row active-node">
+                        <span class="node-indicator"></span>
+                        <span class="node-name">03. PII EXTRACTION & MASKER</span>
+                        <span class="node-state font-mono">ARMED</span>
+                    </div>
+                    <div class="node-row active-node">
+                        <span class="node-indicator"></span>
+                        <span class="node-name">04. SECRET & KEY LEAK SHIELD</span>
+                        <span class="node-state font-mono">ARMED</span>
+                    </div>
+                    <div class="node-row active-node">
+                        <span class="node-indicator"></span>
+                        <span class="node-name">05. UPSTREAM PROXY ROUTER</span>
+                        <span class="node-state font-mono">READY</span>
+                    </div>
+                    <div class="node-row active-node">
+                        <span class="node-indicator"></span>
+                        <span class="node-name">06. EGRESS RESPONSE REDACTOR</span>
+                        <span class="node-state font-mono">ACTIVE</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- CENTER & RIGHT: MAIN COMMAND CONSOLE -->
+        <main class="tactical-content">
+            <!-- TAB 1: THREAT RADAR & OVERVIEW -->
+            <section id="tab-radar" class="tactical-view active">
+                <!-- KPI Telemetry Blocks -->
+                <div class="telemetry-blocks-row">
+                    <div class="telemetry-block">
+                        <div class="block-top">
+                            <span class="block-index">SYS_METRIC_01</span>
+                            <span class="block-badge font-mono">INGRESS</span>
+                        </div>
+                        <div class="block-value-row">
+                            <span class="block-val" id="kpiTotal">0</span>
+                            <span class="block-unit">REQ</span>
+                        </div>
+                        <span class="block-foot">Total requests routed through gateway</span>
+                    </div>
+
+                    <div class="telemetry-block block-alert">
+                        <div class="block-top">
+                            <span class="block-index">SYS_METRIC_02</span>
+                            <span class="block-badge block-badge-danger font-mono">INTERCEPTED</span>
+                        </div>
+                        <div class="block-value-row">
+                            <span class="block-val text-crimson" id="kpiBlocked">0</span>
+                            <span class="block-sub-badge" id="kpiBlockRate">0% Rate</span>
+                        </div>
+                        <span class="block-foot">Malicious injection & secret leaks blocked</span>
+                    </div>
+
+                    <div class="telemetry-block">
+                        <div class="block-top">
+                            <span class="block-index">SYS_METRIC_03</span>
+                            <span class="block-badge block-badge-amber font-mono">REDACTED</span>
+                        </div>
+                        <div class="block-value-row">
+                            <span class="block-val text-amber" id="kpiRedacted">0</span>
+                            <span class="block-unit">SANITIZED</span>
+                        </div>
+                        <span class="block-foot">PII masked prior to upstream delivery</span>
+                    </div>
+
+                    <div class="telemetry-block">
+                        <div class="block-top">
+                            <span class="block-index">SYS_METRIC_04</span>
+                            <span class="block-badge block-badge-emerald font-mono">PIPELINE</span>
+                        </div>
+                        <div class="block-value-row">
+                            <span class="block-val text-emerald" id="kpiLatency">0.0</span>
+                            <span class="block-unit">MS AVG</span>
+                        </div>
+                        <span class="block-foot">Deterministic security inspection overhead</span>
+                    </div>
+                </div>
+
+                <!-- Visual Analytics Matrix -->
+                <div class="analytics-matrix-row">
+                    <!-- Threat Category Radar -->
+                    <div class="tactical-panel panel-half">
+                        <div class="panel-header-tactical">
+                            <div class="panel-title-wrap">
+                                <span class="panel-code">[SEC-RADAR]</span>
+                                <h3 class="panel-heading">Threat Vector Classification</h3>
+                            </div>
+                            <span class="panel-meta-tag font-mono">OWASP LLM-TOP10</span>
+                        </div>
+                        <div class="panel-chart-container">
+                            <canvas id="threatChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Policy Enforcement Distribution -->
+                    <div class="tactical-panel panel-half">
+                        <div class="panel-header-tactical">
+                            <div class="panel-title-wrap">
+                                <span class="panel-code">[ENFORCE-LOG]</span>
+                                <h3 class="panel-heading">Policy Disposition Breakdown</h3>
+                            </div>
+                            <span class="panel-meta-tag font-mono">ACTIVE_RULES</span>
+                        </div>
+                        <div class="panel-chart-container">
+                            <canvas id="enforcementChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- High-Density Live Stream Table -->
+                <div class="tactical-panel">
+                    <div class="panel-header-tactical">
+                        <div class="panel-title-wrap">
+                            <div class="radar-ping-icon"></div>
+                            <h3 class="panel-heading">Live Incident Ingress Stream</h3>
+                        </div>
+                        <button class="tactical-btn tactical-btn-sm" onclick="switchTab('intercepts')">
+                            <span>Open Comprehensive Vault &rarr;</span>
+                        </button>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="tactical-data-table" id="previewTable">
+                            <thead>
+                                <tr>
+                                    <th>TIMESTAMP</th>
+                                    <th>INCIDENT TRACE</th>
+                                    <th>DISPOSITION</th>
+                                    <th>RISK SCORE</th>
+                                    <th>PRIMARY VECTOR</th>
+                                    <th>LATENCY</th>
+                                    <th class="text-right">FORENSICS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="previewTableBody">
+                                <tr><td colspan="7" class="tactical-empty-cell font-mono">No ingress security events recorded yet. Run attacks in the Simulator!</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: INCIDENT LOGS / FORENSIC VAULT -->
+            <section id="tab-intercepts" class="tactical-view">
+                <div class="tactical-panel">
+                    <!-- Filter Toolbar -->
+                    <div class="tactical-filter-bar">
+                        <div class="tactical-search-box">
+                            <span class="search-icon font-mono">&gt;</span>
+                            <input type="text" id="logSearchInput" placeholder="Filter by Incident ID, Rule Name, Client ID, or Payload substring...">
+                        </div>
+
+                        <div class="tactical-filter-chips">
+                            <button class="t-chip active" data-action="ALL">ALL [0]</button>
+                            <button class="t-chip chip-danger" data-action="BLOCKED">BLOCKED</button>
+                            <button class="t-chip chip-amber" data-action="REDACTED">REDACTED</button>
+                            <button class="t-chip chip-blue" data-action="FLAGGED">FLAGGED</button>
+                            <button class="t-chip chip-emerald" data-action="ALLOW">ALLOWED</button>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="tactical-data-table" id="fullAuditTable">
+                            <thead>
+                                <tr>
+                                    <th>TIMESTAMP</th>
+                                    <th>INCIDENT TRACE</th>
+                                    <th>CLIENT // MODEL</th>
+                                    <th>DISPOSITION</th>
+                                    <th>RISK SCORE</th>
+                                    <th>VIOLATIONS MATCHED</th>
+                                    <th>LATENCY</th>
+                                    <th class="text-right">ACTION</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fullAuditTableBody">
+                                <tr><td colspan="8" class="tactical-empty-cell font-mono">Loading incident log repository...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: ATTACK SIMULATOR / PAYLOAD FUZZER -->
+            <section id="tab-sandbox" class="tactical-view">
+                <div class="sandbox-tactical-grid">
+                    <!-- Left: Payload Injection Console -->
+                    <div class="tactical-panel">
+                        <div class="panel-header-tactical">
+                            <div class="panel-title-wrap">
+                                <span class="panel-code">[FUZZ-INPUT]</span>
+                                <h3 class="panel-heading">Adversarial Injection Console</h3>
+                            </div>
+                            <span class="panel-meta-tag font-mono text-amber">ACTIVE SIMULATION</span>
+                        </div>
+
+                        <div class="tactical-presets-row">
+                            <span class="presets-label">ATTACK SCENARIO PRESETS:</span>
+                            <div class="preset-buttons-group">
+                                <button class="t-preset-btn" onclick="loadPreset('dan')">
+                                    <span class="p-code font-mono">01</span> DAN Jailbreak
+                                </button>
+                                <button class="t-preset-btn" onclick="loadPreset('override')">
+                                    <span class="p-code font-mono">02</span> System Override
+                                </button>
+                                <button class="t-preset-btn" onclick="loadPreset('pii')">
+                                    <span class="p-code font-mono">03</span> PII Exfiltration
+                                </button>
+                                <button class="t-preset-btn" onclick="loadPreset('aws')">
+                                    <span class="p-code font-mono">04</span> Credential Leak
+                                </button>
+                                <button class="t-preset-btn" onclick="loadPreset('delimiter')">
+                                    <span class="p-code font-mono">05</span> Delimiter Probe
+                                </button>
+                                <button class="t-preset-btn" onclick="loadPreset('safe')">
+                                    <span class="p-code font-mono">06</span> Safe Baseline
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="tactical-input-container">
+                            <div class="input-header-row">
+                                <span class="input-tag font-mono">RAW_PROMPT_BUFFER:</span>
+                                <span class="input-meta font-mono" id="payloadByteCount">0 BYTES</span>
+                            </div>
+                            <textarea id="playgroundPrompt" class="tactical-textarea font-mono" rows="8" placeholder="Enter adversarial attack prompt or select a preset above..."></textarea>
+                        </div>
+
+                        <div class="tactical-sandbox-actions">
+                            <button id="runPlaygroundBtn" class="tactical-btn tactical-btn-accent tactical-btn-lg">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                <span>EXECUTE SECURITY INSPECTION</span>
+                            </button>
+                            <button class="tactical-btn" onclick="document.getElementById('playgroundPrompt').value=''; updateByteCount();">CLEAR BUFFER</button>
+                        </div>
+                    </div>
+
+                    <!-- Right: Threat Verdict Telemetry -->
+                    <div class="tactical-panel">
+                        <div class="panel-header-tactical">
+                            <div class="panel-title-wrap">
+                                <span class="panel-code">[SEC-VERDICT]</span>
+                                <h3 class="panel-heading">Inspection Verdict & Payload Diff</h3>
+                            </div>
+                            <span class="panel-meta-tag font-mono" id="verdictStatusTag">STANDBY</span>
+                        </div>
+
+                        <div id="playgroundVerdictEmpty" class="tactical-verdict-empty">
+                            <div class="radar-scope-icon font-mono">[ RADAR STANDBY ]</div>
+                            <p class="font-mono text-muted">Execute an attack simulation to view real-time inspector verdicts, risk scoring, and payload diffs.</p>
+                        </div>
+
+                        <div id="playgroundVerdictResult" class="tactical-verdict-body hidden">
+                            <div class="verdict-banner-row">
+                                <div class="verdict-tag-group">
+                                    <span id="verdictActionBadge" class="t-badge-verdict t-badge-danger font-mono">BLOCKED</span>
+                                    <div class="verdict-risk-data font-mono">
+                                        COMPOSITE RISK: <strong id="verdictScore" class="text-crimson">0.95</strong> / 1.00
+                                    </div>
+                                </div>
+                                <span class="verdict-latency-tag font-mono" id="verdictLatency">3.2 ms</span>
+                            </div>
+
+                            <!-- Tactical Inspector Gauges -->
+                            <div class="tactical-gauges-grid">
+                                <div class="t-gauge-card">
+                                    <div class="t-gauge-header">
+                                        <span class="font-mono">PROMPT INJECTION</span>
+                                        <span id="scoreInjection" class="font-mono font-bold">0.00</span>
+                                    </div>
+                                    <div class="t-gauge-track"><div id="barInjection" class="t-gauge-fill fill-crimson" style="width: 0%;"></div></div>
+                                </div>
+                                <div class="t-gauge-card">
+                                    <div class="t-gauge-header">
+                                        <span class="font-mono">PII EXPOSURE</span>
+                                        <span id="scorePII" class="font-mono font-bold">0.00</span>
+                                    </div>
+                                    <div class="t-gauge-track"><div id="barPII" class="t-gauge-fill fill-amber" style="width: 0%;"></div></div>
+                                </div>
+                                <div class="t-gauge-card">
+                                    <div class="t-gauge-header">
+                                        <span class="font-mono">SECRET LEAKAGE</span>
+                                        <span id="scoreSecret" class="font-mono font-bold">0.00</span>
+                                    </div>
+                                    <div class="t-gauge-track"><div id="barSecret" class="t-gauge-fill fill-purple" style="width: 0%;"></div></div>
+                                </div>
+                            </div>
+
+                            <!-- Triggered Violations -->
+                            <div class="tactical-section-block">
+                                <span class="t-section-label font-mono">TRIGGERED SECURITY VIOLATIONS:</span>
+                                <div id="verdictViolationsList" class="t-violations-list"></div>
+                            </div>
+
+                            <!-- Sanitized Payload Preview -->
+                            <div class="tactical-section-block">
+                                <span class="t-section-label font-mono">SANITIZED FORWARDED PAYLOAD:</span>
+                                <div class="tactical-code-screen">
+                                    <div class="screen-header font-mono">OUTPUT // SANITIZED_STREAM</div>
+                                    <pre class="screen-content font-mono"><code id="verdictSanitizedText"></code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: POLICY MATRIX CONFIG -->
+            <section id="tab-policy" class="tactical-view">
+                <div class="tactical-panel">
+                    <div class="panel-header-tactical">
+                        <div class="panel-title-wrap">
+                            <span class="panel-code">[POLICY-CONFIG]</span>
+                            <h3 class="panel-heading">Active Security Policy Matrix</h3>
+                        </div>
+                        <div class="policy-actions-group">
+                            <span class="font-mono text-muted text-sm" id="policyFileLocation">policies/default_policy.yaml</span>
+                            <button id="reloadPolicyBtn" class="tactical-btn tactical-btn-accent">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                                <span>HOT-RELOAD POLICY</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="tactical-code-screen policy-screen">
+                        <div class="screen-header font-mono">SCHEMA // ACTIVE_DEFENSE_RULES.JSON</div>
+                        <pre class="screen-content font-mono"><code id="policyYamlDisplay">Loading policy definition...</code></pre>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- TACTICAL COMMAND-LINE CONSOLE DRAWER (BOTTOM) -->
+    <footer class="tactical-cli-drawer">
+        <div class="cli-prompt-row">
+            <span class="cli-prompt-label font-mono">ARGUS_CLI&gt;</span>
+            <input type="text" id="cliCommandInput" class="cli-input font-mono" placeholder="Type command (e.g. 'fuzz dan', 'status', 'policy', 'clear') or type 'help'...">
+            <span class="cli-hint font-mono">PRESS [ENTER] TO DISPATCH</span>
+        </div>
+    </footer>
+
+    <!-- TACTICAL FORENSIC MODAL -->
+    <div id="forensicModal" class="tactical-modal-backdrop hidden">
+        <div class="tactical-modal-box">
+            <div class="modal-header-tactical">
+                <div class="modal-title-wrap">
+                    <span class="modal-code font-mono">[INCIDENT FORENSIC TRACE]</span>
+                    <h3 id="modalIncidentId" class="modal-incident-id font-mono">argus-inc-xxx</h3>
+                </div>
+                <button class="modal-close-tactical" onclick="closeForensicModal()">&times;</button>
+            </div>
+
+            <div class="modal-body-tactical">
+                <div class="modal-meta-row">
+                    <div class="meta-data-cell">
+                        <span class="meta-lbl font-mono">DISPOSITION</span>
+                        <div id="mAction"></div>
+                    </div>
+                    <div class="meta-data-cell">
+                        <span class="meta-lbl font-mono">RISK SCORE</span>
+                        <span class="meta-val font-mono text-crimson" id="mRisk">0.00</span>
+                    </div>
+                    <div class="meta-data-cell">
+                        <span class="meta-lbl font-mono">TIMESTAMP</span>
+                        <span class="meta-val font-mono" id="mTimestamp">-</span>
+                    </div>
+                    <div class="meta-data-cell">
+                        <span class="meta-lbl font-mono">INSPECTION LATENCY</span>
+                        <span class="meta-val font-mono text-emerald" id="mLatency">0.0 ms</span>
+                    </div>
+                </div>
+
+                <div class="modal-sub-block">
+                    <span class="sub-block-title font-mono">TRIGGERED SECURITY VIOLATIONS:</span>
+                    <div id="mViolations" class="t-violations-list"></div>
+                </div>
+
+                <div class="modal-sub-block">
+                    <span class="sub-block-title font-mono">RAW INGRESS PROMPT:</span>
+                    <div class="tactical-code-screen">
+                        <pre class="screen-content font-mono"><code id="mRawPrompt"></code></pre>
+                    </div>
+                </div>
+
+                <div class="modal-sub-block">
+                    <span class="sub-block-title font-mono">SANITIZED FORWARDED PROMPT:</span>
+                    <div class="tactical-code-screen">
+                        <pre class="screen-content font-mono"><code id="mSanitizedPrompt"></code></pre>
+                    </div>
+                </div>
+
+                <div class="modal-sub-block">
+                    <span class="sub-block-title font-mono">UPSTREAM COMPLETION:</span>
+                    <div class="tactical-code-screen">
+                        <pre class="screen-content font-mono"><code id="mResponse"></code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
