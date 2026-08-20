@@ -121,6 +121,14 @@
                         <span class="nav-desc">YAML Defense Schema</span>
                     </div>
                 </button>
+
+                <button class="tactical-nav-item" data-tab="architecture">
+                    <span class="nav-marker">05</span>
+                    <div class="nav-content">
+                        <span class="nav-heading">Architecture Topology</span>
+                        <span class="nav-desc">End-to-End Pipeline Blueprint</span>
+                    </div>
+                </button>
             </nav>
 
             <!-- Active Defense Topology Grid -->
@@ -468,6 +476,120 @@
                     <div class="tactical-code-screen policy-screen">
                         <div class="screen-header font-mono">SCHEMA // ACTIVE_DEFENSE_RULES.JSON</div>
                         <pre class="screen-content font-mono"><code id="policyYamlDisplay">Loading policy definition...</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 5: ARCHITECTURE TOPOLOGY -->
+            <section id="tab-architecture" class="tactical-view">
+                <div class="tactical-panel">
+                    <div class="panel-header-tactical">
+                        <div class="panel-title-wrap">
+                            <span class="panel-code">[SYS-TOPOLOGY]</span>
+                            <h3 class="panel-heading">End-to-End Pipeline Architecture Blueprint</h3>
+                        </div>
+                        <span class="panel-meta-tag font-mono text-emerald">GATEWAY PIPELINE SPEC v1.0</span>
+                    </div>
+
+                    <!-- Flow Diagram Cards Grid -->
+                    <div class="architecture-grid">
+                        <div class="arch-stage-card">
+                            <div class="stage-header">
+                                <span class="stage-num font-mono">STAGE 01</span>
+                                <span class="stage-tag font-mono">INGRESS</span>
+                            </div>
+                            <h4 class="stage-title">Auth & Rate Gate</h4>
+                            <p class="stage-desc">Extracts Bearer token / X-API-Key, runs constant-time hash validation, and applies in-memory sliding window rate limits.</p>
+                            <div class="stage-code-meta font-mono">app/core/auth.py<br>app/core/rate_limit.py</div>
+                        </div>
+
+                        <div class="arch-arrow font-mono">&rarr;</div>
+
+                        <div class="arch-stage-card stage-highlight">
+                            <div class="stage-header">
+                                <span class="stage-num font-mono">STAGE 02</span>
+                                <span class="stage-tag stage-tag-alert font-mono">INSPECT</span>
+                            </div>
+                            <h4 class="stage-title">Multi-Vector Request Inspection</h4>
+                            <p class="stage-desc">Scans prompt asynchronously across Prompt Injection heuristics, PII entity recognition, and credential/key leakage patterns.</p>
+                            <div class="stage-code-meta font-mono">app/inspectors/injection_inspector.py<br>app/inspectors/pii_inspector.py<br>app/inspectors/secret_inspector.py</div>
+                        </div>
+
+                        <div class="arch-arrow font-mono">&rarr;</div>
+
+                        <div class="arch-stage-card">
+                            <div class="stage-header">
+                                <span class="stage-num font-mono">STAGE 03</span>
+                                <span class="stage-tag font-mono">DECISION</span>
+                            </div>
+                            <h4 class="stage-title">Policy Risk Engine</h4>
+                            <p class="stage-desc">Calculates composite risk score against YAML rules. Enforces ALLOW, REDACT, FLAGGED, or hard BLOCKED with 400 rejection.</p>
+                            <div class="stage-code-meta font-mono">app/policy/engine.py<br>policies/default_policy.yaml</div>
+                        </div>
+
+                        <div class="arch-arrow font-mono">&rarr;</div>
+
+                        <div class="arch-stage-card">
+                            <div class="stage-header">
+                                <span class="stage-num font-mono">STAGE 04</span>
+                                <span class="stage-tag font-mono">PROXY</span>
+                            </div>
+                            <h4 class="stage-title">Upstream LLM Proxy</h4>
+                            <p class="stage-desc">Asynchronously proxies sanitized messages to target LLM provider (OpenAI, Gemini, Anthropic, or Mock provider).</p>
+                            <div class="stage-code-meta font-mono">app/upstream/client.py<br>app/upstream/mock_provider.py</div>
+                        </div>
+
+                        <div class="arch-arrow font-mono">&rarr;</div>
+
+                        <div class="arch-stage-card">
+                            <div class="stage-header">
+                                <span class="stage-num font-mono">STAGE 05</span>
+                                <span class="stage-tag font-mono">RESPONSE</span>
+                            </div>
+                            <h4 class="stage-title">Response Guard & Audit DB</h4>
+                            <p class="stage-desc">Inspects model completion for credential leaks and PII before client delivery, recording full forensic trace to SQLite WAL database.</p>
+                            <div class="stage-code-meta font-mono">app/storage/database.py<br>app/storage/repository.py</div>
+                        </div>
+                    </div>
+
+                    <!-- Pipeline Schematic ASCII Terminal -->
+                    <div class="tactical-code-screen policy-screen" style="margin-top: 1.25rem;">
+                        <div class="screen-header font-mono">TOPOLOGY // END_TO_END_SCHEMATIC.TXT</div>
+                        <pre class="screen-content font-mono"><code>+-----------------------------------------------------------------------------------------------------------------------+
+|                                              ARGUS GATEWAY DEFENSE TOPOLOGY                                           |
++-----------------------------------------------------------------------------------------------------------------------+
+|                                                                                                                       |
+|  [Client Application] ---> POST /v1/chat / completions ---> [01. Ingress Gate: Auth & Rate Limiter]                   |
+|                                                                       |                                               |
+|                                                                       v                                               |
+|                                                     [02. Request Inspection Layer]                            |
+|                                                     +---------------------------------------+                         |
+|                                                     | - Prompt Injection & Jailbreak (DAN)  |                         |
+|                                                     | - PII Entity Extraction & Masking     |                         |
+|                                                     | - Secret & API Key Leak Filter        |                         |
+|                                                     +---------------------------------------+                         |
+|                                                                       |                                               |
+|                                                                       v                                               |
+|                                                     [03. Policy Engine & Risk Scorer]                         |
+|                                                     /                                       \                         |
+|                               [Risk >= 0.70]       /                                         \  [Passed / Redacted]   |
+|                                                   v                                           v                       |
+|                                      [HTTP 400 Policy Rejection]                     [04. Upstream LLM Proxy]         |
+|                                                   |                                           |                       |
+|                                                   |                                           v                       |
+|                                                   |                                 [05. Response Inspection]         |
+|                                                   |                                 +-----------------------+         |
+|                                                   |                                 | - Egress Secret Leak  |         |
+|                                                   |                                 | - Outbound PII Mask   |         |
+|                                                   |                                 +-----------------------+         |
+|                                                   |                                           |                       |
+|                                                   v                                           v                       |
+|                                       [06. SQLite WAL Audit Logger] <-----------------+-------+                       |
+|                                                   |                                           |                       |
+|                                                   v                                           v                       |
+|                                      [Tactical SOC Dashboard UI]                    [Sanitized JSON to Client]        |
+|                                                                                                                       |
++-----------------------------------------------------------------------------------------------------------------------+</code></pre>
                     </div>
                 </div>
             </section>

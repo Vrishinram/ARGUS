@@ -26,38 +26,86 @@ It continuously inspects ingress prompts and egress completions for adversarial 
 
 ```mermaid
 flowchart TD
-    Client([Client Application]) -->|POST /v1/chat or /v1/chat/completions| Ingress[Gateway Auth & Sliding Rate Limiter]
+    Client["Client Application"] -->|"POST /v1/chat"| Ingress["Gateway Auth & Rate Limiter"]
     
-    Ingress -->|Unauthorized / Rate Exceeded| Reject([HTTP 401 / 429])
-    Ingress -->|Authorized| ReqInspector[Request Inspection Layer]
+    Ingress -->|"401 / 429 Error"| Reject["Rejected Response"]
+    Ingress -->|"Authorized"| ReqInspector["Request Inspection Layer"]
     
-    subgraph Request Inspection
-        ReqInspector --> PII[PII Scanner & Redactor]
-        ReqInspector --> Injection[Prompt Injection & Jailbreak Detector]
-        ReqInspector --> Secrets[Secret / Token Leak Filter]
+    subgraph SubReq["Request Inspection Layer"]
+        PII["PII Entity Scanner & Masker"]
+        Injection["Prompt Injection & Jailbreak Detector"]
+        Secrets["Secret & Credential Filter"]
     end
     
-    PII & Injection & Secrets --> PolicyEngine{Policy Engine & Risk Scorer}
+    ReqInspector --> PII
+    ReqInspector --> Injection
+    ReqInspector --> Secrets
     
-    PolicyEngine -->|Decision: BLOCK (Risk >= 0.70)| BlockedResponse[HTTP 400 Policy Violation + Incident ID]
-    BlockedResponse --> AuditDB[(SQLite WAL Audit Log)]
+    PII --> PolicyEngine["Policy Engine & Risk Scorer"]
+    Injection --> PolicyEngine
+    Secrets --> PolicyEngine
     
-    PolicyEngine -->|Decision: ALLOW / REDACT| UpstreamProxy[Async Upstream LLM Proxy]
-    UpstreamProxy --> UpstreamLLM([Upstream LLM Provider / Mock Engine])
-    UpstreamLLM --> RespInspector[Response Inspection Layer]
+    PolicyEngine -->|"Decision: BLOCK"| BlockedResponse["HTTP 400 Policy Violation + Incident ID"]
+    BlockedResponse --> AuditDB[("SQLite WAL Audit Log")]
     
-    subgraph Response Inspection
-        RespInspector --> RespSecrets[Outbound Credential Filter]
-        RespInspector --> RespPII[Outbound PII Masking]
+    PolicyEngine -->|"Decision: ALLOW or REDACT"| UpstreamProxy["Async Upstream Proxy Client"]
+    UpstreamProxy --> UpstreamLLM["Upstream LLM (OpenAI / Gemini / Mock)"]
+    UpstreamLLM --> RespInspector["Response Inspection Layer"]
+    
+    subgraph SubResp["Response Inspection Layer"]
+        RespSecrets["Outbound Credential Filter"]
+        RespPII["Outbound PII Masking"]
     end
     
-    RespInspector --> AuditDB
-    RespInspector -->|Sanitized JSON Response| Client
+    RespInspector --> RespSecrets
+    RespInspector --> RespPII
     
-    subgraph Observability & Control
-        AuditDB --> AdminAPI[Admin & Metrics REST API]
-        AdminAPI --> SOCDashboard[ARGUS Cyber SOC Dashboard]
+    RespSecrets --> AuditDB
+    RespPII --> AuditDB
+    RespInspector -->|"Sanitized JSON Response"| Client
+    
+    subgraph SubObs["Observability & Control"]
+        AuditDB --> AdminAPI["Admin & Metrics REST API"]
+        AdminAPI --> SOCDashboard["ARGUS Tactical Defense Console"]
     end
+```
+
+```
++---------------------------------------------------------------------------------------------------------+
+|                                    ARGUS PIPELINE TOPOLOGY                                              |
++---------------------------------------------------------------------------------------------------------+
+|                                                                                                         |
+|   [Client App] ---> (POST /v1/chat) ---> [Ingress Auth & Rate Limiter]                                  |
+|                                                     |                                                   |
+|                                                     v                                                   |
+|                                       [Request Inspection Layer]                                        |
+|                                       +------------------------+                                        |
+|                                       | - Prompt Injection     |                                        |
+|                                       | - PII Detection        |                                        |
+|                                       | - Credential Filter    |                                        |
+|                                       +------------------------+                                        |
+|                                                     |                                                   |
+|                                                     v                                                   |
+|                                          [Policy Risk Engine]                                           |
+|                                          /                  \                                           |
+|                        [Risk >= 0.70]   /                    \  [Passed / Redacted]                     |
+|                                        v                      v                                         |
+|                             [400 Policy Block]          [Upstream LLM Proxy]                            |
+|                                        |                      |                                         |
+|                                        |                      v                                         |
+|                                        |           [Response Inspection Gate]                           |
+|                                        |           +------------------------+                           |
+|                                        |           | - Secret Leak Filter   |                           |
+|                                        |           | - Outbound PII Masking |                           |
+|                                        |           +------------------------+                           |
+|                                        |                      |                                         |
+|                                        v                      v                                         |
+|                             [Async SQLite Audit DB] ---> [Sanitized Output -> Client]                   |
+|                                        |                                                                |
+|                                        v                                                                |
+|                             [Tactical SOC Dashboard]                                                    |
+|                                                                                                         |
++---------------------------------------------------------------------------------------------------------+
 ```
 
 ---

@@ -1110,6 +1110,100 @@ body.tactical-body {
 .modal-sub-block { margin-bottom: 1rem; }
 .sub-block-title { font-size: 0.65rem; color: var(--text-muted); display: block; margin-bottom: 4px; }
 
+/* ARCHITECTURE TOPOLOGY GRID */
+.architecture-grid {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 1rem;
+    overflow-x: auto;
+    padding-bottom: 8px;
+}
+
+.arch-stage-card {
+    background: var(--tactical-bg);
+    border: 1px solid var(--border-tactical);
+    border-top: 3px solid var(--border-tactical-light);
+    border-radius: var(--radius-sharp);
+    padding: 1rem;
+    flex: 1;
+    min-width: 180px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: var(--transition-fast);
+}
+
+.arch-stage-card:hover {
+    border-color: var(--border-tactical-light);
+    transform: translateY(-2px);
+}
+
+.arch-stage-card.stage-highlight {
+    border-top-color: var(--sig-amber);
+    background: linear-gradient(180deg, var(--sig-amber-dim), var(--tactical-bg));
+}
+
+.stage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stage-num {
+    font-size: 0.62rem;
+    color: var(--sig-amber);
+    font-weight: 700;
+}
+
+.stage-tag {
+    font-size: 0.58rem;
+    padding: 2px 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 2px;
+    color: var(--text-muted);
+}
+
+.stage-tag-alert {
+    background: var(--sig-amber-dim);
+    color: var(--sig-amber);
+}
+
+.stage-title {
+    font-family: var(--font-head);
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.stage-desc {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    flex: 1;
+}
+
+.stage-code-meta {
+    font-size: 0.62rem;
+    color: var(--sig-emerald);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 4px 6px;
+    border-radius: 2px;
+    border: 1px dashed rgba(0, 240, 144, 0.2);
+    word-break: break-all;
+}
+
+.arch-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--sig-amber);
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding: 0 4px;
+}
+
 /* TOAST SHELF */
 .tactical-toast-shelf {
     position: fixed;
