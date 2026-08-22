@@ -20,6 +20,23 @@ async def test_health_endpoint():
 
 
 @pytest.mark.asyncio
+async def test_dashboard_auth_enforcement():
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        # Unauthorized without key
+        res_unauth = await ac.get("/dashboard")
+        assert res_unauth.status_code == 401
+        assert res_unauth.json()["error"] == "unauthorized"
+
+        # Authorized with query param ?key=
+        res_auth_query = await ac.get("/dashboard?key=sk-argus-admin-master-key")
+        assert res_auth_query.status_code == 200
+
+        # Authorized with X-Argus-Admin-Key header
+        res_auth_header = await ac.get("/dashboard", headers={"X-Argus-Admin-Key": "sk-argus-admin-master-key"})
+        assert res_auth_header.status_code == 200
+
+
+@pytest.mark.asyncio
 async def test_chat_gateway_unauthorized():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.post("/v1/chat", json={"prompt": "hello"})

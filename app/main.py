@@ -87,57 +87,25 @@ if static_dir.exists():
 templates = Jinja2Templates(directory=str(templates_dir))
 
 
-def _verify_dashboard_auth(request: Request, key: Optional[str] = None) -> bool:
-    """Validate admin authorization for the SOC dashboard."""
-    # Allow bypass in development mode if debug is enabled
-    if settings.ARGUS_ENV != "production" and settings.ARGUS_DEBUG:
-        return True
-
-    admin_key = settings.ARGUS_ADMIN_API_KEY
-    if not admin_key:
-        return True
-
-    # 1. Query parameter key
-    if key and key == admin_key:
-        return True
-
-    # 2. Header Authorization Bearer
-    auth_header = request.headers.get("Authorization", "")
-    if auth_header.startswith("Bearer ") and auth_header[7:].strip() == admin_key:
-        return True
-
-    # 3. Custom admin header
-    if request.headers.get("X-Argus-Admin-Key", "") == admin_key:
-        return True
-
-    # 4. Cookie session
-    if request.cookies.get("argus_admin_key", "") == admin_key:
-        return True
-
-    return False
-
-
 # Web UI Dashboard Route (Fast, Native, Dark Glassmorphic SOC)
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 @app.get("/dashboard", response_class=HTMLResponse, include_in_schema=False)
-async def serve_dashboard(request: Request, key: Optional[str] = Query(None)):
-    if not _verify_dashboard_auth(request, key):
-        return HTMLResponse(
-            content="""
-            <!DOCTYPE html>
-            <html>
-            <head><title>401 Unauthorized - ARGUS SOC</title>
-            <style>body{background:#0a0e17;color:#ff003c;font-family:monospace;padding:50px;text-align:center;}</style>
-            </head>
-            <body>
-            <h2>🚨 401 UNAUTHORIZED: ARGUS TACTICAL SOC DEFENSE CONSOLE</h2>
-            <p style="color:#c8d6e5;">Admin API Key required to access this dashboard.</p>
-            <p style="color:#5c6b7e;">Pass ?key=YOUR_ARGUS_ADMIN_API_KEY in the URL or set X-Argus-Admin-Key header.</p>
-            </body>
-            </html>
-            """,
-            status_code=status.HTTP_401_UNAUTHORIZED,
+async def serve_dashboard(request: Request):
+    if settings.ARGUS_ADMIN_API_KEY:
+        admin_key = (
+            request.query_params.get("key")
+            or request.headers.get("X-Argus-Admin-Key")
+            or (request.headers.get("Authorization") or "").removeprefix("Bearer ").strip()
+            or request.cookies.get("argus_admin_key")
         )
+        if admin_key != settings.ARGUS_ADMIN_API_KEY:
+            return JSONResponse(
+                {
+                    "error": "unauthorized",
+                    "message": "Valid ARGUS_ADMIN_API_KEY required via ?key= query parameter, X-Argus-Admin-Key header, or Bearer token.",
+                },
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
 
