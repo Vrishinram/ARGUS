@@ -1,7 +1,8 @@
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
-from fastapi import FastAPI, Request, Response
+from typing import Optional
+from fastapi import FastAPI, HTTPException, Query, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -49,13 +50,13 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# CORS middleware with restricted origins from settings
+# CORS middleware with restricted origins from settings (NEVER wildcard in production)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "X-Argus-Client-Key", "X-API-Key"],
+    allow_headers=["Authorization", "Content-Type", "X-Argus-Client-Key", "X-API-Key", "X-Argus-Admin-Key"],
 )
 
 # Add Rate-Limit / Security headers middleware
@@ -86,16 +87,63 @@ if static_dir.exists():
 templates = Jinja2Templates(directory=str(templates_dir))
 
 
+def _verify_dashboard_auth(request: Request, key: Optional[str] = None) -> bool:
+    """Validate admin authorization for the SOC dashboard."""
+    # Allow bypass in development mode if debug is enabled
+    if settings.ARGUS_ENV != "production" and settings.ARGUS_DEBUG:
+        return True
+
+    admin_key = settings.ARGUS_ADMIN_API_KEY
+    if not admin_key:
+        return True
+
+    # 1. Query parameter key
+    if key and key == admin_key:
+        return True
+
+    # 2. Header Authorization Bearer
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer ") and auth_header[7:].strip() == admin_key:
+        return True
+
+    # 3. Custom admin header
+    if request.headers.get("X-Argus-Admin-Key", "") == admin_key:
+        return True
+
+    # 4. Cookie session
+    if request.cookies.get("argus_admin_key", "") == admin_key:
+        return True
+
+    return False
+
+
 # Web UI Dashboard Route (Fast, Native, Dark Glassmorphic SOC)
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 @app.get("/dashboard", response_class=HTMLResponse, include_in_schema=False)
-async def serve_dashboard(request: Request):
+async def serve_dashboard(request: Request, key: Optional[str] = Query(None)):
+    if not _verify_dashboard_auth(request, key):
+        return HTMLResponse(
+            content="""
+            <!DOCTYPE html>
+            <html>
+            <head><title>401 Unauthorized - ARGUS SOC</title>
+            <style>body{background:#0a0e17;color:#ff003c;font-family:monospace;padding:50px;text-align:center;}</style>
+            </head>
+            <body>
+            <h2>🚨 401 UNAUTHORIZED: ARGUS TACTICAL SOC DEFENSE CONSOLE</h2>
+            <p style="color:#c8d6e5;">Admin API Key required to access this dashboard.</p>
+            <p style="color:#5c6b7e;">Pass ?key=YOUR_ARGUS_ADMIN_API_KEY in the URL or set X-Argus-Admin-Key header.</p>
+            </body>
+            </html>
+            """,
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
 
 @app.get("/health", tags=["Health"])
 async def health_check():
-    """Health check endpoint verifying gateway status, policy file parsing, and DB connectivity."""
+    """Health check endpoint verifying gateway status, policy file parsing, and SQLite DB connectivity."""
     policy_path = settings.policy_full_path
     policy_loaded = False
     policy_name = "unknown"
@@ -109,9 +157,8 @@ async def health_check():
         except Exception as e:
             policy_error = str(e)
 
-    db_ready = settings.db_full_path.exists()
-
-    status_str = "healthy" if (policy_loaded and db_ready) else "degraded"
+    db_reachable = await db_manager.check_health()
+    status_str = "healthy" if (policy_loaded and db_reachable) else "degraded"
 
     return {
         "status": status_str,
@@ -126,7 +173,7 @@ async def health_check():
         },
         "database": {
             "path": str(settings.db_full_path),
-            "ready": db_ready,
+            "reachable": db_reachable,
         },
         "rate_limit_enabled": settings.ARGUS_RATE_LIMIT_ENABLED,
     }

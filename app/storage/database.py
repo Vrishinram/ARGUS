@@ -47,6 +47,17 @@ class DatabaseManager:
             await db.commit()
         logger.info(f"Database initialized successfully at {self.db_path}")
 
+    async def check_health(self) -> bool:
+        """Execute a lightweight probe query to verify SQLite reachability."""
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                async with db.execute("SELECT 1") as cursor:
+                    row = await cursor.fetchone()
+                    return row is not None and row[0] == 1
+        except Exception as e:
+            logger.error("Database health check probe failed: %s", e)
+            return False
+
     def get_connection(self):
         """Returns an async context manager for SQLite connection."""
         return aiosqlite.connect(self.db_path)

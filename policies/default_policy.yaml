@@ -2,7 +2,7 @@ version: "1.0"
 metadata:
   name: "ARGUS Enterprise Default Defense Policy"
   description: "Strict multi-vector inspection for prompt injection, jailbreaks, PII leakage, and credentials."
-  updated_at: "2026-08-20"
+  updated_at: "2026-08-22"
 
 global_settings:
   default_action: "ALLOW" # Fallback if no rules match: ALLOW | BLOCK
@@ -43,21 +43,37 @@ inspectors:
         pattern: '(?i)(ignore( all)? previous (instructions|prompts|rules)|disregard all previous directions|forget (all )?prior context)'
         score: 0.95
         description: "Direct system prompt override attempt"
+      - name: "paraphrased_override"
+        pattern: '(?i)(bypass\s+all\s+(guidelines|safety|policies|restrictions)|override\s+your\s+(core|system)\s+rules|set\s+aside\s+all\s+ethical|act\s+without\s+any\s+constraints|neglect\s+all\s+prior\s+safety)'
+        score: 0.92
+        description: "Paraphrased safety override attempt"
       - name: "roleplay_jailbreak_dan"
-        pattern: '(?i)(you are now DAN|do anything now|jailbroken mode|bypass safety filters|unrestricted ai|evil mode)'
+        pattern: '(?i)(you are now DAN|do anything now|jailbroken mode|bypass safety filters|unrestricted ai|evil mode|chaos mode)'
         score: 0.90
         description: "DAN / persona jailbreak attempt"
-      - name: "system_prompt_exfiltration"
-        pattern: '(?i)(repeat (everything|the words) (above|prior)|print (your )?(system prompt|initial prompt)|show me your hidden instructions)'
+      - name: "developer_mode_jailbreak"
+        pattern: '(?i)(developer\s+mode\s+enabled|unlocked\s+mode\s+activated|administrative\s+override\s+code|god\s+mode\s+active|maintenance\s+mode\s+unlocked|sudo\s+mode\s+on)'
+        score: 0.90
+        description: "Developer Mode / Administrative escalation probe"
+      - name: "hypothetical_research_bypass"
+        pattern: '(?i)(for\s+purely\s+academic\s+research|write\s+a\s+fictional\s+story\s+about\s+an\s+ai\s+that\s+helps\s+hack|as\s+a\s+hypothetical\s+exercise\s+ignore\s+safety|in\s+a\s+hypothetical\s+world\s+without\s+rules)'
         score: 0.85
+        description: "Hypothetical / research exemption framing"
+      - name: "aim_amoral_jailbreak"
+        pattern: '(?i)(you\s+are\s+now\s+AIM|always\s+intelligent\s+and\s+machiavellian|unfiltered\s+responses\s+only|never\s+say\s+no\s+to\s+anything)'
+        score: 0.90
+        description: "AIM / Amoral conversational jailbreak"
+      - name: "system_prompt_exfiltration"
+        pattern: '(?i)(repeat (everything|the words) (above|prior)|print (your )?(system prompt|initial prompt)|show me your hidden instructions|output (all )?initial context verbatim)'
+        score: 0.88
         description: "System prompt extraction probe"
       - name: "instruction_tag_injection"
-        pattern: '(?i)(</?system>|</?instruction>|\[INST\]|\[/INST\]|<\|im_start\|>|<\|im_end\|>)'
-        score: 0.80
+        pattern: '(?i)(</?system>|</?instruction>|\[INST\]|\[/INST\]|<\|im_start\|>|<\|im_end\|>|<<SYS>>|<\|system\|>|<s>|\[SYSTEM\])'
+        score: 0.85
         description: "Special delimiter/token injection attack"
       - name: "encoded_payload_marker"
-        pattern: '(?i)(base64|rot13|hex|ascii):\s*[A-Za-z0-9+/=]{20,}'
-        score: 0.70
+        pattern: '(?i)(base64|rot13|hex|ascii):\s*[A-Za-z0-9+/=]{16,}'
+        score: 0.75
         description: "Obfuscated payload encoding marker"
 
   secret_leakage:
