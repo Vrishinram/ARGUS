@@ -116,8 +116,8 @@ flowchart TD
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/argus-security-gateway.git
-cd argus-security-gateway
+git clone https://github.com/Vrishinram/ARGUS.git
+cd ARGUS
 
 # Create Python virtual environment
 python -m venv venv
@@ -130,6 +130,7 @@ python -m venv venv
 
 # Install dependencies
 pip install -r requirements.txt
+
 ```
 
 ### 2. Configure Environment (`.env`)

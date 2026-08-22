@@ -3,10 +3,12 @@ from typing import List, Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(PROJECT_ROOT / ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -20,6 +22,7 @@ class Settings(BaseSettings):
     # Security & Auth
     ARGUS_API_KEYS: str = "sk-argus-test-client-key-1,sk-argus-admin-master-key"
     ARGUS_ADMIN_API_KEY: str = "sk-argus-admin-master-key"
+    ARGUS_ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:8000,http://127.0.0.1:3000,http://127.0.0.1:8000"
 
     # Rate Limiting
     ARGUS_RATE_LIMIT_ENABLED: bool = True
@@ -32,7 +35,7 @@ class Settings(BaseSettings):
     ARGUS_UPSTREAM_MODEL: str = "gpt-4o-mini"
     ARGUS_UPSTREAM_TIMEOUT_SECONDS: float = 30.0
 
-    # Storage & Policy Paths
+    # Storage & Policy Paths (relative to PROJECT_ROOT)
     ARGUS_DB_PATH: str = "argus_gateway.db"
     ARGUS_POLICY_PATH: str = "policies/default_policy.yaml"
 
@@ -41,12 +44,18 @@ class Settings(BaseSettings):
         return [k.strip() for k in self.ARGUS_API_KEYS.split(",") if k.strip()]
 
     @property
+    def allowed_origins(self) -> List[str]:
+        return [o.strip() for o in self.ARGUS_ALLOWED_ORIGINS.split(",") if o.strip()]
+
+    @property
     def db_full_path(self) -> Path:
-        return Path(self.ARGUS_DB_PATH).resolve()
+        path = Path(self.ARGUS_DB_PATH)
+        return path if path.is_absolute() else (PROJECT_ROOT / path).resolve()
 
     @property
     def policy_full_path(self) -> Path:
-        return Path(self.ARGUS_POLICY_PATH).resolve()
+        path = Path(self.ARGUS_POLICY_PATH)
+        return path if path.is_absolute() else (PROJECT_ROOT / path).resolve()
 
 
 settings = Settings()

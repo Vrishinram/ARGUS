@@ -1,9 +1,9 @@
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from app.api.v1.router import api_router
@@ -18,6 +18,7 @@ from app.core.errors import (
     unauthorized_handler,
     upstream_provider_handler,
 )
+from app.policy.engine import PolicyEngine
 from app.storage.database import db_manager
 
 # Configure logging
@@ -48,14 +49,25 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# CORS middleware for client & dashboard integration
+# CORS middleware with restricted origins from settings
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Argus-Client-Key", "X-API-Key"],
 )
+
+# Add Rate-Limit / Security headers middleware
+@app.middleware("http")
+async def add_security_and_rate_limit_headers(request: Request, call_next):
+    response: Response = await call_next(request)
+    if settings.ARGUS_RATE_LIMIT_ENABLED:
+        response.headers["X-RateLimit-Limit"] = str(settings.ARGUS_RATE_LIMIT_REQUESTS_PER_MINUTE)
+        response.headers["X-RateLimit-Period"] = "60s"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    return response
 
 # Register Custom Security Exception Handlers
 app.add_exception_handler(SecurityPolicyViolationException, security_policy_violation_handler)
@@ -74,7 +86,7 @@ if static_dir.exists():
 templates = Jinja2Templates(directory=str(templates_dir))
 
 
-# Web UI Dashboard Route (No Streamlit - Fast, Native, Dark Glassmorphic SOC)
+# Web UI Dashboard Route (Fast, Native, Dark Glassmorphic SOC)
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 @app.get("/dashboard", response_class=HTMLResponse, include_in_schema=False)
 async def serve_dashboard(request: Request):
@@ -83,13 +95,40 @@ async def serve_dashboard(request: Request):
 
 @app.get("/health", tags=["Health"])
 async def health_check():
-    """Health check endpoint for Kubernetes / Docker / load balancers."""
+    """Health check endpoint verifying gateway status, policy file parsing, and DB connectivity."""
+    policy_path = settings.policy_full_path
+    policy_loaded = False
+    policy_name = "unknown"
+    policy_error = None
+
+    if policy_path.exists():
+        try:
+            engine = PolicyEngine(policy_path)
+            policy_loaded = engine.policy is not None
+            policy_name = getattr(engine.policy.metadata, "name", "Default Policy")
+        except Exception as e:
+            policy_error = str(e)
+
+    db_ready = settings.db_full_path.exists()
+
+    status_str = "healthy" if (policy_loaded and db_ready) else "degraded"
+
     return {
-        "status": "healthy",
+        "status": status_str,
         "gateway": "ARGUS AI Defense Gateway",
         "version": "1.0.0",
         "upstream_provider": settings.ARGUS_UPSTREAM_PROVIDER,
-        "database": "sqlite_wal_active",
+        "policy": {
+            "path": str(policy_path),
+            "loaded": policy_loaded,
+            "name": policy_name,
+            "error": policy_error,
+        },
+        "database": {
+            "path": str(settings.db_full_path),
+            "ready": db_ready,
+        },
+        "rate_limit_enabled": settings.ARGUS_RATE_LIMIT_ENABLED,
     }
 
 
