@@ -24,12 +24,11 @@ It continuously inspects ingress prompts and egress completions for adversarial 
 
 ## 📐 Architecture Pipeline
 
-```mermaid
-flowchart TD
-    Client["Client Application"] -->|"POST /v1/chat"| Ingress["Gateway Auth & Rate Limiter"]
+\flowchart TD
+    Client["Client Application"] -->|POST /v1/chat| Ingress["Gateway Auth & Rate Limiter"]
     
-    Ingress -->|"401 / 429 Error"| Reject["Rejected Response"]
-    Ingress -->|"Authorized"| ReqInspector["Request Inspection Layer"]
+    Ingress -->|401 / 429 Error| Reject["Rejected Response"]
+    Ingress -->|Authorized| ReqInspector["Request Inspection Layer"]
     
     subgraph SubReq["Request Inspection Layer"]
         PII["PII Entity Scanner & Masker"]
@@ -41,6 +40,33 @@ flowchart TD
     ReqInspector --> Injection
     ReqInspector --> Secrets
     
+    PII --> PolicyEngine["Policy Engine & Risk Scorer"]
+    Injection --> PolicyEngine
+    Secrets --> PolicyEngine
+    
+    PolicyEngine -->|Decision: BLOCK| BlockedResponse["HTTP 400 Policy Violation + Incident ID"]
+    BlockedResponse --> AuditDB[("SQLite WAL Audit Log")]
+    
+    PolicyEngine -->|Decision: PASS| UpstreamProxy["Async Upstream Proxy Client"]
+    UpstreamProxy --> UpstreamLLM["Upstream LLM (OpenAI / Gemini / Mock)"]
+    UpstreamLLM --> RespInspector["Response Inspection Layer"]
+    
+    subgraph SubResp["Response Inspection Layer"]
+        RespSecrets["Outbound Credential Filter"]
+        RespPII["Outbound PII Masking"]
+    end
+    
+    RespInspector --> RespSecrets
+    RespInspector --> RespPII
+    
+    RespSecrets --> AuditDB
+    RespPII --> AuditDB
+    RespInspector -->|Sanitized JSON Response| Client
+    
+    subgraph SubObs["Observability & Control"]
+        AuditDB --> AdminAPI["Admin & Metrics REST API"]
+        AdminAPI --> SOCDashboard["ARGUS Tactical Defense Console"]
+    end   
     PII --> PolicyEngine["Policy Engine & Risk Scorer"]
     Injection --> PolicyEngine
     Secrets --> PolicyEngine
