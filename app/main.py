@@ -106,7 +106,11 @@ async def serve_dashboard(request: Request):
                 },
                 status_code=status.HTTP_401_UNAUTHORIZED,
             )
-    return templates.TemplateResponse("dashboard.html", {"request": request})
+    return templates.TemplateResponse(
+        request=request,
+        name="dashboard.html",
+        context={},
+    )
 
 
 @app.get("/health", tags=["Health"])
