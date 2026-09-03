@@ -92,3 +92,13 @@ flowchart LR
 ## 📄 License
 
 Distributed under the MIT License. See [LICENSE](LICENSE).
+
+
+---
+
+## 🌟 Star History & Community Support
+
+If you find **ARGUS** helpful or are using it in your AI safety pipeline, please star the repository ⭐!
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Vrishinram/ARGUS&type=Date)](https://star-history.com/#Vrishinram/ARGUS&Date)
+
